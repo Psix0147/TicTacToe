@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Doc</title>
+    <script>
+        var socket = new WebSocket('ws://' + document.location.hostname + ':8080');
+        window.onload = function () {
+            socket.onopen = function () {
+                alert("Connected");
+            };
+
+            socket.onmessage = function (event) {
+                alert("Data:" + event.data);
+            };
+
+            socket.onclose = function (event) {
+                if (event.wasClean) {
+                    alert('Clean disconnect');
+                } else {
+                    alert('Lost connection');
+                }
+            };
+
+        };
+
+        // function sendLol(socket) {
+        //     socket.send("lol");
+        // }
+
+    </script>
+</head>
+<body>
+</body>
+</html>
