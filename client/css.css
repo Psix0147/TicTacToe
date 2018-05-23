@@ -1,0 +1,40 @@
+#game			{	
+					float: center;
+					width: 750px;
+					height: 750px;
+					background: gray;
+					margin: 0 auto;
+					margin-top: 5%;
+}
+#board			{	
+					float: left;
+					width: 80%;
+}
+#pole			{	
+					margin-top:20%;
+					float: left;
+					width:17%;
+}
+
+#subm			{	
+					text-align:center;
+					font-size:50px;
+}
+
+.block			{
+					width: 150px;
+					height: 150px;
+					float: left;
+					border: 2.5px solid white;
+					box-sizing: border-box;
+}
+
+.Active			{
+					width: 150px;
+					height: 150px;
+					float: left;
+					border: 2.5px solid white;
+					box-sizing: border-box;
+					text-align:center;
+					font-size:130px
+}
