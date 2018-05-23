@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Doc</title>
+    <title>Websocket test page</title>
     <script>
         var socket = new WebSocket('ws://' + document.location.hostname + ':8080');
         window.onload = function () {
@@ -10,7 +10,7 @@
             };
 
             socket.onmessage = function (event) {
-                alert("Data:" + event.data);
+                alert("Data: " + event.data.toString());
             };
 
             socket.onclose = function (event) {
@@ -21,12 +21,10 @@
                 }
             };
 
+            socket.onerror = function (err) {
+                alert('Error:' + err.message)
+            }
         };
-
-        // function sendLol(socket) {
-        //     socket.send("lol");
-        // }
-
     </script>
 </head>
 <body>

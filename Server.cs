@@ -13,8 +13,6 @@ namespace TicTacToe
     {
         private readonly TcpListener Listener;
 
-        private static Client C;
-
         public Server(int port)
         {
             var clients = new List<Client>();
@@ -22,12 +20,11 @@ namespace TicTacToe
             Listener.Start();
             while (clients.Count < 2)
             {
-                clients.Add(Client.AcceptClient(Listener));
+                Client c;
+                clients.Add(c = Client.AcceptClient(Listener));
+                c.SendMessage(Console.ReadLine());
             }
-
-            Console.WriteLine("\n\nGame Over\n");
         }
-
 
         ~Server()
         {

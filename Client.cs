@@ -10,8 +10,8 @@ namespace TicTacToe
 {
     public class Client
     {
-        public TcpClient TcpClient;
-        public Thread Thread;
+        private TcpClient TcpClient;
+        private Thread Thread;
 
         private static void ClientThread(object stateInfo) => Handshake((TcpClient) stateInfo);
 
@@ -55,6 +55,20 @@ namespace TicTacToe
                 Thread = thread
             };
             return ret;
+        }
+
+        public void SendMessage(string msg)
+        {
+            var data = Encoding.UTF8.GetBytes(msg);
+            byte b1 = 129;
+            var b2 = (byte) msg.Length;
+            var tosend = new byte[msg.Length + 2];
+            tosend[0] = b1;
+            tosend[1] = b2;
+            for (var i = 0; i < data.Length; i++)
+                tosend[i + 2] = data[i];
+
+            TcpClient.GetStream().Write(tosend, 0, tosend.Length);
         }
     }
 }
