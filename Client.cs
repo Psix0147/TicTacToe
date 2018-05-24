@@ -16,7 +16,7 @@ namespace TicTacToe
         private TcpClient TcpClient;
         private Thread Thread;
 
-        private static void ClientThread(object stateInfo) => Handshake((TcpClient) stateInfo);
+        private static void ClientThread(object stateInfo) => Handshake((TcpClient)stateInfo);
 
         private static void Handshake(TcpClient client)
         {
@@ -33,7 +33,7 @@ namespace TicTacToe
                                                   "Connection: keep-alive, Upgrade\r\n" +
                                                   "Upgrade: websocket\r\n" +
                                                   $"Sec-WebSocket-Accept: {hash}\r\n" +
-                                                  "Sec-WebSocket-Extensions: permessage-deflate\r\n\r\n");
+                                                  "Sec-WebSocket-Extensions:\r\n\r\n");
             stream.Write(response, 0, response.Length);
         }
 
@@ -64,7 +64,7 @@ namespace TicTacToe
         {
             var data = Encoding.UTF8.GetBytes(msg);
             byte b1 = 129;
-            var b2 = (byte) msg.Length;
+            var b2 = (byte)msg.Length;
             var tosend = new byte[msg.Length + 2];
             tosend[0] = b1;
             tosend[1] = b2;
@@ -78,17 +78,16 @@ namespace TicTacToe
         {
             while (TcpClient.Available == 0) ;
             var header = new byte[2];
-            var mask = new byte[4];
-            var data = new byte[TcpClient.Available - 6];
             TcpClient.GetStream().Read(header, 0, header.Length);
+            var mask = new byte[4];
             TcpClient.GetStream().Read(mask, 0, mask.Length);
-            TcpClient.GetStream().Read(data, 0, data.Length);
-            var length = header[1] - 128;
+            var length = header[1] & 127;
+            var data = new byte[length];
+            TcpClient.GetStream().Read(data, 0, length);
             for (var i = 0; i < length; i++)
             {
                 data[i] ^= mask[i % 4];
             }
-
             return Encoding.UTF8.GetString(data);
         }
     }
