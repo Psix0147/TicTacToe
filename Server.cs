@@ -23,6 +23,7 @@ namespace TicTacToe
                 Client c;
                 clients.Add(c = Client.AcceptClient(Listener));
                 c.SendMessage(Console.ReadLine());
+                Console.WriteLine(c.RecieveMessage());
             }
         }
 

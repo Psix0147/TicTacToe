@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Websocket test page</title>
-    <script>
-        var socket = new WebSocket('ws://' + document.location.hostname + ':8080');
-        window.onload = function () {
-            socket.onopen = function () {
-                alert("Connected");
-            };
+<meta charset="US-ASCII">
+<title>Websocket test page</title>
+<script>
+    var socket = new WebSocket('ws://' + document.location.hostname + ':8080');
+    window.onload = function () {
+        socket.onopen = function () {
+            alert("Connected");
+        };
+        socket.onmessage = function (event) {
 
-            socket.onmessage = function (event) {
-                alert("Data: " + event.data.toString());
-            };
+            alert("Data: " + event.data);
+            socket.send(event.data);
+        };
 
-            socket.onclose = function (event) {
-                if (event.wasClean) {
-                    alert('Clean disconnect');
-                } else {
-                    alert('Lost connection');
-                }
-            };
-
-            socket.onerror = function (err) {
-                alert('Error:' + err.message)
+        socket.onclose = function (event) {
+            if (event.wasClean) {
+                alert('Clean disconnect');
+            } else {
+                alert('Lost connection');
             }
         };
-    </script>
+
+        socket.onerror = function (err) {
+            alert('Error:' + err.message)
+        }
+    };
+</script>
 </head>
 <body>
 </body>

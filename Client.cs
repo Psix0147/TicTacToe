@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Net.WebSockets;
 
 namespace TicTacToe
 {
@@ -69,6 +72,24 @@ namespace TicTacToe
                 tosend[i + 2] = data[i];
 
             TcpClient.GetStream().Write(tosend, 0, tosend.Length);
+        }
+
+        public string RecieveMessage()
+        {
+            while (TcpClient.Available == 0) ;
+            var header = new byte[2];
+            var mask = new byte[4];
+            var data = new byte[TcpClient.Available - 6];
+            TcpClient.GetStream().Read(header, 0, header.Length);
+            TcpClient.GetStream().Read(mask, 0, mask.Length);
+            TcpClient.GetStream().Read(data, 0, data.Length);
+            var length = header[1] - 128;
+            for (var i = 0; i < length; i++)
+            {
+                data[i] ^= mask[i % 4];
+            }
+
+            return Encoding.UTF8.GetString(data);
         }
     }
 }
