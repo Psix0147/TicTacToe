@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="US-ASCII">
+    <meta charset="UTF-8">
     <title>Websocket test page</title>
     <script>
         var socket = new WebSocket('ws://' + document.location.hostname + ':8080');
@@ -10,9 +10,7 @@
                 alert("Connected");
             };
             socket.onmessage = function (event) {
-
-                alert("Data: " + event.data);
-                socket.send(event.data);
+                alert(event.data);
             };
 
             socket.onclose = function (event) {

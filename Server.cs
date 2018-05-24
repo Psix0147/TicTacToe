@@ -15,15 +15,33 @@ namespace TicTacToe
 
         public Server(int port)
         {
-            var clients = new List<Client>();
+            var gameEnded = false;
+            var turn = 0;
+            var clients = new List<Client>(2);
+            var first = new Random().Next(0, 1);
             Listener = new TcpListener(IPAddress.Any, port);
             Listener.Start();
             while (clients.Count < 2)
             {
-                Client c;
-                clients.Add(c = Client.AcceptClient(Listener));
-                c.SendMessage(Console.ReadLine());
-                Console.WriteLine(c.RecieveMessage());
+                clients.Add(Client.AcceptClient(Listener));
+            }
+
+            var queue = new List<Client>
+            {
+                clients[first],
+                clients[Math.Abs((first + 1) % 2)]
+            };
+            Console.WriteLine("Game started!");
+            Console.WriteLine("First player's ID:" + first);
+            for (var i = 0; i < 2; i++)
+                clients[i].SendMessage($"You are {(first == i ? "first" : "second")} player");
+
+            while (!gameEnded)
+            {
+                var pos = queue[turn % 2].ReceiveMessage();
+                Console.WriteLine($"{(turn % 2 == 0 ? "X" : "O")}:{pos}");
+                queue[(turn + 1) % 2].SendMessage($"{(turn % 2 == 0 ? "X" : "O")}:{pos}");
+                turn++;
             }
         }
 

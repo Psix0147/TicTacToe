@@ -74,7 +74,7 @@ namespace TicTacToe
             TcpClient.GetStream().Write(tosend, 0, tosend.Length);
         }
 
-        public string RecieveMessage()
+        public string ReceiveMessage()
         {
             while (TcpClient.Available == 0) ;
             var header = new byte[2];
