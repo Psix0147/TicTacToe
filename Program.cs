@@ -4,7 +4,8 @@
     {
         public static void Main(string[] args)
         {
-            new Server(8080);
+            while (true)
+                new Server(8080);
         }
     }
 }

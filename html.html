@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Websocket test page</title>
+    <script>
+        var lastTurn = 0;
+        var socket;
+        var symbol;
+        window.onload = function () {
+            socket = new WebSocket('ws://' + document.location.hostname + ':' + document.location.port);
+            socket.onopen = function () {
+            };
+            socket.onmessage = function (event) {
+                // if (event.data.charAt(1) === ':') {
+                //     document.getElementById(event.data.split(':')[1]).innerHTML = event.data.split(':')[0];
+                //     canMakeTurn = true;
+                // }
+                var s = event.data.split('.');
+                if (s[0] === 'game') {
+                    if (s[1] === 'symbol') {
+                        symbol = s[2];
+                    }
+                }
+                else if (s[0] === 'move') {
+                    if (s[1] === 'good') {
+                        document.getElementById(lastTurn).innerHTML = symbol;
+                    } else if (s[1] === 'place') {
+                        document.getElementById(s[2]).innerHTML = s[3];
+                    }
+                }
+                else if (s[0] === 'msg') {
+                    alert(s[1]);
+                }
+            };
+            socket.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log('Disconnected');
+                } else {
+                    console.log('Server not responding');
+                }
+            };
+            socket.onerror = function (err) {
+                console.log('Error:' + err.message)
+            };
+            document.getElementById('game').onclick = function (event) {
+                if (event.target.className === 'block') {
+                    socket.send(event.target.id);
+                    lastTurn = event.target.id;
+                }
+            };
+            for (var i = 0; i < 25; i++) {
+                document.getElementById('game').innerHTML += '<div class="block" id=' + i + '><div  class="Act"></div></div>';
+            }
+        };
+    </script>
+    <style type="text/css">
+        #game {
+            float: left;
+            width: 750px;
+            height: 750px;
+            background: gray;
+            margin: 0 auto;
+            margin-top: 5%;
+        }
+
+        #board {
+            float: left;
+            width: 80%;
+        }
+
+        #pole {
+            margin-top: 20%;
+            float: left;
+            width: 17%;
+        }
+
+        #subm {
+            text-align: center;
+            font-size: 50px;
+        }
+
+        .block {
+            width: 150px;
+            height: 150px;
+            float: left;
+            border: 2.5px solid white;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 150px;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div id="board">
+        <div id="game"></div>
+    </div>
+    <div id="pole"><input id="subm" type="submit" value="New game"></div>
+</div>
+</body>
+</html>

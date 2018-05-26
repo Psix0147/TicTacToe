@@ -45,7 +45,7 @@
     <Compile Include="Server.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="test.html">
+    <Content Include="html.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

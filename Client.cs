@@ -1,26 +1,24 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Net.WebSockets;
 
 namespace TicTacToe
 {
     public class Client
     {
-        private TcpClient TcpClient;
+        public TcpClient TcpClient { get; private set; }
         private Thread Thread;
 
-        private static void ClientThread(object stateInfo) => Handshake((TcpClient)stateInfo);
+        private static void ClientThread(object stateInfo) => Handshake((TcpClient) stateInfo);
 
         private static void Handshake(TcpClient client)
         {
             var stream = client.GetStream();
+            while (client.Available == 0) ;
             var bytes = new byte[client.Available];
             stream.Read(bytes, 0, bytes.Length);
             var data = Encoding.UTF8.GetString(bytes);
@@ -42,8 +40,11 @@ namespace TicTacToe
             var client = listener.AcceptTcpClient();
             var stream = client.GetStream();
 
-            var html = File.ReadAllText(Environment.CurrentDirectory + "/test.html");
-            var str = $"HTTP/1.1\nContent-type: text/html\nContent-Length:{html.Length}\n\n{html}";
+            while (client.Available == 0) ;
+            var bytes = new byte[client.Available];
+            stream.Read(bytes, 0, bytes.Length);
+            var html = File.ReadAllText(Environment.CurrentDirectory + "/html.html");
+            var str = $"HTTP/1.1\nContent-type: text/html\nContent-Length: {html.Length}\n\n{html}";
             var buffer = Encoding.ASCII.GetBytes(str);
             stream.Write(buffer, 0, buffer.Length);
             stream.Close();
@@ -60,11 +61,11 @@ namespace TicTacToe
             return ret;
         }
 
-        public void SendMessage(string msg)
+        public void SendMessage(string msg = "", byte opcode = 0x1)
         {
             var data = Encoding.UTF8.GetBytes(msg);
-            byte b1 = 129;
-            var b2 = (byte)msg.Length;
+            var b1 = (byte) (128 + opcode);
+            var b2 = (byte) msg.Length;
             var tosend = new byte[msg.Length + 2];
             tosend[0] = b1;
             tosend[1] = b2;
@@ -88,6 +89,7 @@ namespace TicTacToe
             {
                 data[i] ^= mask[i % 4];
             }
+
             return Encoding.UTF8.GetString(data);
         }
     }
