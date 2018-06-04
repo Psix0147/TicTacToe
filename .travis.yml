@@ -8,4 +8,4 @@ install:
  - nuget install NUnit.Runners -Version 3.8.0 -OutputDirectory testrunner
 script:
  - xbuild /p:Configuration=Release TicTacToe.sln
- - mono testrunner/NUnit.Runners.3.8.0/tools/nunit-console.exe Tests/bin/Release/TictacToe.Tests.dll
+ - mono ./testrunner/NUnit.Runners.3.8.0/tools/nunit-console.exe ./Tests/bin/Release/TictacToe.Tests.dll
