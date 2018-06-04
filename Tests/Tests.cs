@@ -27,7 +27,8 @@ namespace TicTacToe.Tests
                 {' ', ' ', ' ', ' ', ' '},
                 {' ', ' ', ' ', ' ', ' '}
             };
-            Assert.True(Server.IsPossibleMove(3, 0, cells, 3));
+            Assert.False(Server.IsPossibleMove(3, 0, cells, 3));
+            Assert.True(Server.IsPossibleMove(3, 1, cells, 3));
             Assert.False(Server.IsPossibleMove(0, 0, cells, 3));
             Assert.False(Server.IsPossibleMove(1, 1, cells, 3));
         }
