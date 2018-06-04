@@ -3,7 +3,7 @@ using System.Text;
 using TicTacToe;
 using NUnit.Framework;
 
-namespace Tests
+namespace TicTacToe.Tests
 {
     [TestFixture]
     public class Tests
