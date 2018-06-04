@@ -7,96 +7,322 @@
         var lastTurn = 0;
         var socket;
         var symbol;
+        var nickname;
         window.onload = function () {
-            socket = new WebSocket('ws://' + document.location.hostname + ':' + document.location.port);
-            socket.onopen = function () {
-            };
-            socket.onmessage = function (event) {
-                // if (event.data.charAt(1) === ':') {
-                //     document.getElementById(event.data.split(':')[1]).innerHTML = event.data.split(':')[0];
-                //     canMakeTurn = true;
-                // }
-                var s = event.data.split('.');
-                if (s[0] === 'game') {
-                    if (s[1] === 'symbol') {
-                        symbol = s[2];
+            document.getElementById("login").onclick = function (e) {
+                nickname = document.getElementById("username").value;
+                socket = new WebSocket('ws://' + document.location.hostname + ':' + document.location.port);
+                socket.onopen = function () {
+                    document.body.innerHTML =
+                        "<div id=\"game\"></div>\n" +
+                        "<form class=\"chat\">\n" +
+                        "    <span id=\"messageList\" class=\"messagelist\"></span>\n" +
+                        "    <input id=\'message\' class=\"textarea\" type=\"text\" placeholder=\"Message...\"/>\n" +
+                        "    <a class=\"button\" id=\"sendButton\">Send</a>\n" +
+                        "</form>";
+                    for (var i = 0; i < 25; i++) {
+                        document.getElementById('game').innerHTML += '<div class="block" id=' + i + '></div>';
                     }
-                }
-                else if (s[0] === 'move') {
-                    if (s[1] === 'good') {
-                        document.getElementById(lastTurn).innerHTML = symbol;
-                    } else if (s[1] === 'place') {
-                        document.getElementById(s[2]).innerHTML = s[3];
+                    document.getElementById('game').onclick = function (event) {
+                        if (event.target.className === 'block') {
+                            socket.send("#" + event.target.id);
+                            lastTurn = event.target.id;
+                        }
+                    };
+                    document.getElementById('sendButton').onclick = function (ev) {
+                        socket.send(document.getElementById('message').value);
+                    };
+                    socket.send(nickname);
+                };
+                socket.onmessage = function (event) {
+                    var s = event.data.split('\0');
+                    if (s[0] === 'game') {
+                        if (s[1] === 'symbol') {
+                            symbol = s[2];
+                        }
+                        if (s[1] === 'close') {
+                            socket.close(1000)
+                        }
                     }
-                }
-                else if (s[0] === 'msg') {
-                    alert(s[1]);
-                }
+                    else if (s[0] === 'move') {
+                        if (s[1] === 'good') {
+                            document.getElementById(lastTurn).innerHTML = symbol;
+                        } else if (s[1] === 'place') {
+                            document.getElementById(s[2]).innerHTML = s[3];
+                        }
+                    }
+                    else if (s[0] === 'msg') {
+                        document.getElementById('messageList').innerText += (s[1] + '\n');
+                    }
+                };
+                socket.onclose = function (event) {
+                    if (event.wasClean) {
+                        console.log('Disconnected');
+                    } else {
+                        console.log('Server not responding');
+                    }
+                };
+                socket.onerror = function (err) {
+                    console.log('Error:' + err.message)
+                };
             };
-            socket.onclose = function (event) {
-                if (event.wasClean) {
-                    console.log('Disconnected');
-                } else {
-                    console.log('Server not responding');
-                }
-            };
-            socket.onerror = function (err) {
-                console.log('Error:' + err.message)
-            };
-            document.getElementById('game').onclick = function (event) {
-                if (event.target.className === 'block') {
-                    socket.send(event.target.id);
-                    lastTurn = event.target.id;
-                }
-            };
-            for (var i = 0; i < 25; i++) {
-                document.getElementById('game').innerHTML += '<div class="block" id=' + i + '><div  class="Act"></div></div>';
-            }
         };
     </script>
     <style type="text/css">
+        @import url(https://fonts.googleapis.com/css?family=Bree+Serif);
+
         #game {
             float: left;
-            width: 750px;
-            height: 750px;
+            width: 40vw;
+            height: 40vw;
             background: gray;
-            margin: 0 auto;
-            margin-top: 5%;
-        }
-
-        #board {
-            float: left;
-            width: 80%;
-        }
-
-        #pole {
-            margin-top: 20%;
-            float: left;
-            width: 17%;
-        }
-
-        #subm {
-            text-align: center;
-            font-size: 50px;
+            margin-left: 5%;
+            margin-top: 3%;
+            border: 5px solid #6f6767;
         }
 
         .block {
-            width: 150px;
-            height: 150px;
+            width: 20%;
+            height: 20%;
             float: left;
-            border: 2.5px solid white;
+            border: 1px solid white;
             box-sizing: border-box;
             text-align: center;
-            font-size: 150px;
+            font-size: 7vw;
+        }
+
+        ::selection {
+            color: #fff;
+            background: #f676b2; /* Safari */
+        }
+
+        ::-moz-selection {
+            color: #fff;
+            background: #f676b2; /* Firefox */
+        }
+
+        .chat {
+            position: absolute;
+            width: 40vw;
+            right: 1vh;
+            bottom: 1vh;
+            height: 100vh;
+        }
+
+        .messagelist {
+            height: 90vh;
+            width: 100%;
+            position: inherit;
+            bottom: 7vh;
+            left: 0px;
+            background: rgba(61, 61, 61, 0.18);
+        }
+
+        .textarea {
+            width: 80%;
+            position: absolute;
+            bottom: 0px;
+            height: 2vw;
+            font-size: 1vw;
+        }
+
+        .button {
+            width: 17%;
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+            height: 1.5vw;
+            float: left;
+            padding-top: 0.5vw;
+            font-size: 1vw;
+            font-weight: bold;
+            text-align: center;
+            color: #fff;
+            background: #56c2e1;
+            border: 1px solid #46b3d3;
+            border-radius: 5px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+        }
+
+        body {
+            background: url('http://www.demo.amitjakhu.com/login-form/images/bg.png');
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+            text-align: left;
+            text-decoration: none;
+            height: 500px;
+        }
+
+        #container article {
+            background: #f3f3f3;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 243px;
+            vertical-align: top;
+            padding: 5px;
+        }
+
+        /*******************
+        LOGIN FORM
+        *******************/
+
+        .login-form {
+            width: 300px;
+            margin: 150px auto;
+            position: relative;
+            background: #f3f3f3;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            height: 216px;
+        }
+
+        /*******************
+        HEADER
+        *******************/
+
+        .login-form .header {
+            padding: 15px 30px 15px 30px;
+        }
+
+        .login-form .header h1 {
+            font-family: 'Bree Serif', serif;
+            font-weight: 300;
+            font-size: 24px;
+            line-height: 34px;
+            color: #414848;
+            text-shadow: 1px 1px 0 rgba(256, 256, 256, 1.0);
+            margin-bottom: 10px;
+        }
+
+        .login-form .header span {
+            font-size: 11px;
+            line-height: 16px;
+            color: #678889;
+            text-shadow: 1px 1px 0 rgba(256, 256, 256, 1.0);
+        }
+
+        /*******************
+        CONTENT
+        *******************/
+
+        .login-form .content {
+            padding: 0 30px 10px 30px;
+        }
+
+        /* Input field */
+        .login-form .content .input {
+            width: 188px;
+            padding: 15px 25px;
+
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: #9d9e9e;
+            text-shadow: 1px 1px 0 rgba(256, 256, 256, 1.0);
+
+            background: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+            -moz-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+            -webkit-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.50);
+        }
+
+        .login-form .content .input:hover {
+            background: #dfe9ec;
+            color: #414848;
+        }
+
+        .login-form .content .input:focus {
+            background: #dfe9ec;
+            color: #414848;
+
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+            -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+            -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+
+        .content input:focus + div {
+            left: -46px;
+        }
+
+        /* Animation */
+        .input, .button {
+            transition: all 0.5s ease;
+            -moz-transition: all 0.5s ease;
+            -webkit-transition: all 0.5s ease;
+            -o-transition: all 0.5s ease;
+            -ms-transition: all 0.5s ease;
+        }
+
+        /*******************
+        FOOTER
+        *******************/
+
+        .login-form .footer {
+            padding: 30px;
+            overflow: auto;
+            background: #d4dedf;
+            border-top: 1px solid #fff;
+            box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.15);
+            -moz-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.15);
+            -webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.15);
+            border-radius: 0px 0px 5px 5px;
+        }
+
+        /* Login button */
+        .login-form .footer .button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: 1px solid #46b3d3;
+            border-radius: 5px;
+            margin-bottom: 9px;
+            margin-right: 9px;
+            height: 12px;
+        }
+
+        .login-form .footer .button:hover {
+            background: #3f9db8;
+            border: 1px solid rgba(256, 256, 256, 0.75);
+
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            -moz-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            -webkit-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-form .footer .button:focus {
+            position: relative;
+            bottom: -1px;
+
+            background: #56c2e1;
+
+            box-shadow: inset 0 1px 6px rgba(256, 256, 256, 0.75);
+            -moz-box-shadow: inset 0 1px 6px rgba(256, 256, 256, 0.75);
+            -webkit-box-shadow: inset 0 1px 6px rgba(256, 256, 256, 0.75);
         }
     </style>
 </head>
 <body>
-<div>
-    <div id="board">
-        <div id="game"></div>
+<form name="login-form" class="login-form" action="" method="post">
+    <div class="header">
+        <h1>Login</h1>
+        <span>Please, write your nickname</span>
     </div>
-    <div id="pole"><input id="subm" type="submit" value="New game"></div>
-</div>
+    <div class="content">
+        <input name="username" type="text" class="input username" id="username" placeholder="Username"/>
+    </div>
+    <div class="footer">
+        <a class="button" id="login">Login</a>
+    </div>
+</form>
 </body>
 </html>

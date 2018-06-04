@@ -12,23 +12,37 @@ namespace TicTacToe
         private static char[,] cells;
         private static int turn;
 
+        private const string HelpMessage =
+            "msg\0/help - show this message\n" +
+            "/restart - start voting for a game restart\n" +
+            "/giveup - give up";
+
         public Server(int port)
         {
             cells = new char[5, 5];
             for (var i = 0; i < 5; i++)
             for (var j = 0; j < 5; j++)
                 cells[i, j] = ' ';
-
+            var restart = false;
             var gameEnded = false;
             turn = 0;
             var clients = new List<Client>(2);
             var first = new Random().Next() % 2;
             Listener = new TcpListener(IPAddress.Any, port);
             Listener.Start();
+
+
+            Listener.BeginAcceptTcpClient(Client.SendPageAsync, Listener);
+            Listener.BeginAcceptTcpClient(Client.SendPageAsync, Listener);
+            Listener.BeginAcceptTcpClient(Client.AcceptClientAsync, Listener);
+            Listener.BeginAcceptTcpClient(Client.AcceptClientAsync, Listener);
+
             while (clients.Count < 2)
             {
-                clients.Add(Client.AcceptClient(Listener));
-                Console.WriteLine("Client " + (clients.Count - 1) + " has joined");
+                if (Client.staticClient == null) continue;
+                clients.Add(Client.staticClient);
+                Console.WriteLine(clients[clients.Count - 1].Nickname + " has joined");
+                Client.staticClient = null;
             }
 
             Thread.Sleep(100);
@@ -38,44 +52,90 @@ namespace TicTacToe
                 clients[(first + 1) % 2]
             };
             Console.WriteLine("Game started!");
-            Console.WriteLine("First player is client #" + first);
+            Console.WriteLine($"First player is {clients[first].Nickname}");
             for (var i = 0; i < queue.Count; i++)
             {
-                queue[i].SendMessage($"msg.You are {(i == 0 ? "first" : "second")} player");
-                queue[i].SendMessage($"game.symbol.{(i == 0 ? 'X' : 'O')}");
+                queue[i].SendMessage($"msg\0You are {(i == 0 ? "first" : "second")} player");
+                queue[i].SendMessage($"game\0symbol\0{(i == 0 ? 'X' : 'O')}");
             }
 
-            var w = ' ';
             while (!gameEnded)
             {
                 for (var i = 0; i < 2; i++)
                 {
-                    var pos = 0;
-                    if (queue[i].TcpClient.Available == 0 || i != turn % 2) continue;
-                    if (!int.TryParse(queue[i].ReceiveMessage(), out pos)) continue;
-                    if (!isPossibleMove(pos, i)) continue;
-                    queue[i].SendMessage("move.good");
-                    Console.WriteLine($"{(turn % 2 == 0 ? 'X' : 'O')}:{pos}");
-                    queue[(i + 1) % 2].SendMessage($"move.place.{pos}.{(turn % 2 == 0 ? 'X' : 'O')}");
-                    cells[pos / 5, pos % 5] = turn % 2 == 0 ? 'X' : 'O';
-                    if (CheckWinner(pos, out w) && turn < 25)
+                    if (queue[i].TcpClient.Available == 0) continue;
+                    var msg = queue[i].ReceiveMessage();
+                    if (msg[0] == '/')
                     {
-                        gameEnded = true;
+                        switch (msg)
+                        {
+                            case "/help":
+                                queue[i].SendMessage(HelpMessage);
+                                break;
+                            case "/restart":
+                                queue[(i + 1) % 2].SendMessage("msg\0" + queue[i].Nickname +
+                                                               " wants to restart the game" +
+                                                               " (type /restart to restart)");
+                                queue[i].SendMessage("msg\0Waiting for opponent...");
+                                while (queue[(i + 1) % 2].TcpClient.Available == 0) ;
+                                if (queue[(i + 1) % 2].ReceiveMessage() == "/restart")
+                                {
+                                    gameEnded = true;
+                                    restart = true;
+                                    foreach (var t in queue)
+                                    {
+                                        t.SendMessage("msg\0To restart reload the page");
+                                    }
+                                }
+
+                                break;
+                            case "/giveup":
+                                queue[i].SendMessage("game\0close");
+                                queue[(i + 1) % 2].SendMessage("msg\0" + queue[i].Nickname + " is giving up");
+                                turn = (i + 1) % 2;
+                                gameEnded = true;
+                                break;
+                        }
                     }
-                    else turn++;
+                    else if (msg[0] == '#')
+                    {
+                        var m = msg.Substring(1);
+                        int pos;
+                        if (i != turn % 2 || !int.TryParse(m, out pos)) continue;
+                        if (!IsPossibleMove(pos, i)) continue;
+                        queue[i].SendMessage("move\0good");
+                        Console.WriteLine($"{(turn % 2 == 0 ? 'X' : 'O')}:{pos}");
+                        queue[(i + 1) % 2].SendMessage($"move\0place\0{pos}\0{(turn % 2 == 0 ? 'X' : 'O')}");
+                        cells[pos / 5, pos % 5] = turn % 2 == 0 ? 'X' : 'O';
+                        char w;
+                        if (CheckWinner(pos, out w) && turn < 25)
+                        {
+                            gameEnded = true;
+                        }
+                        else turn++;
+                    }
+                    else
+                    {
+                        foreach (var t in queue)
+                        {
+                            t.SendMessage("msg\0" + queue[i].Nickname + ": " + msg);
+                        }
+                    }
                 }
             }
 
             foreach (var t in queue)
             {
-                t.SendMessage($"msg.{w} wins\nTo play again reload the page.");
+                if (!restart)
+                    t.SendMessage($"msg\0{clients[turn % 2].Nickname} wins\nIf you want to play again reload the page");
                 t.SendMessage(opcode: 0x8);
+                t.TcpClient.Close();
             }
 
             Listener.Stop();
         }
 
-        private static bool isPossibleMove(int pos, int playerID) => playerID == turn % 2 &&
+        private static bool IsPossibleMove(int pos, int playerId) => playerId == turn % 2 &&
                                                                      pos > -1 && pos < 25 &&
                                                                      cells[pos / 5, pos % 5] == ' ';
 
@@ -137,11 +197,6 @@ namespace TicTacToe
                    left + right - 1 >= 4 ||
                    upRight + downLeft - 1 >= 4 ||
                    upLeft + downRight - 1 >= 4;
-        }
-
-        ~Server()
-        {
-            Listener?.Stop();
         }
     }
 }

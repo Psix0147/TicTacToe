@@ -12,6 +12,8 @@ namespace TicTacToe
     {
         public TcpClient TcpClient { get; private set; }
         private Thread Thread;
+        public string Nickname;
+        public static Client staticClient;
 
         private static void ClientThread(object stateInfo) => Handshake((TcpClient) stateInfo);
 
@@ -35,9 +37,8 @@ namespace TicTacToe
             stream.Write(response, 0, response.Length);
         }
 
-        public static Client AcceptClient(TcpListener listener)
+        private static void SendPage(TcpClient client)
         {
-            var client = listener.AcceptTcpClient();
             var stream = client.GetStream();
 
             while (client.Available == 0) ;
@@ -45,19 +46,34 @@ namespace TicTacToe
             stream.Read(bytes, 0, bytes.Length);
             var html = File.ReadAllText(Environment.CurrentDirectory + "/html.html");
             var str = $"HTTP/1.1\nContent-type: text/html\nContent-Length: {html.Length}\n\n{html}";
-            var buffer = Encoding.ASCII.GetBytes(str);
+            var buffer = Encoding.UTF8.GetBytes(str);
             stream.Write(buffer, 0, buffer.Length);
-            stream.Close();
+            client.Close();
+        }
 
+        public static void AcceptClientAsync(IAsyncResult ar)
+        {
+            var l = (TcpListener) ar.AsyncState;
+            staticClient = AcceptClient(l.EndAcceptTcpClient(ar));
+        }
+
+        public static void SendPageAsync(IAsyncResult ar)
+        {
+            var l = (TcpListener) ar.AsyncState;
+            SendPage(l.EndAcceptTcpClient(ar));
+        }
+
+        private static Client AcceptClient(TcpClient client)
+        {
             var thread = new Thread(ClientThread);
-            client = listener.AcceptTcpClient();
             thread.Start(client);
-
             var ret = new Client
             {
                 TcpClient = client,
                 Thread = thread
             };
+            Thread.Sleep(100);
+            ret.Nickname = ret.ReceiveMessage();
             return ret;
         }
 
@@ -65,8 +81,8 @@ namespace TicTacToe
         {
             var data = Encoding.UTF8.GetBytes(msg);
             var b1 = (byte) (128 + opcode);
-            var b2 = (byte) msg.Length;
-            var tosend = new byte[msg.Length + 2];
+            var b2 = (byte) data.Length;
+            var tosend = new byte[data.Length + 2];
             tosend[0] = b1;
             tosend[1] = b2;
             for (var i = 0; i < data.Length; i++)
