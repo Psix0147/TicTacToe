@@ -101,12 +101,17 @@ namespace TicTacToe
             var length = header[1] & 127;
             var data = new byte[length];
             TcpClient.GetStream().Read(data, 0, length);
-            for (var i = 0; i < length; i++)
+            return XORCipher(data, mask);
+        }
+
+        public static string XORCipher(byte[] data, byte[] mask)
+        {
+            for (var i = 0; i < data.Length; i++)
             {
                 data[i] ^= mask[i % 4];
             }
-
             return Encoding.UTF8.GetString(data);
         }
+
     }
 }

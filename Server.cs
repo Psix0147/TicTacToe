@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace TicTacToe
 {
-    internal class Server
+    public class Server
     {
         private readonly TcpListener Listener;
         private static char[,] cells;
@@ -135,61 +135,66 @@ namespace TicTacToe
             Listener.Stop();
         }
 
-        private static bool IsPossibleMove(int pos, int playerId) => playerId == turn % 2 &&
-                                                                     pos > -1 && pos < 25 &&
-                                                                     cells[pos / 5, pos % 5] == ' ';
+        public static bool IsPossibleMove(int pos, int playerId, char[,] c = null, int t = -1)
+        {
+            if (c == null) c = cells;
+            if (t == -1) t = turn;
+            return playerId == t % 2 && pos > -1 && pos < 25 && c[pos / 5, pos % 5] == ' ';
+        }
 
-        private static bool CheckWinner(int start, out char w)
+        public static bool CheckWinner(int start, out char w, int t = -1, char[,] c = null)
         {
             int right = 0, left = 0, up = 0, down = 0, upRight = 0, downRight = 0, upLeft = 0, downLeft = 0;
-            w = turn % 2 == 0 ? 'X' : 'O';
+            if (c == null) c = cells;
+            if (t == -1) t = turn;
+            w = t % 2 == 0 ? 'X' : 'O';
             var a = start / 5;
             var b = start % 5;
             for (int i = a, j = b; i < 5; i++)
             {
-                if (cells[i, j] == w) down++;
+                if (c[i, j] == w) down++;
                 else break;
             }
 
             for (int i = a, j = b; i >= 0; i--)
             {
-                if (cells[i, j] == w) up++;
+                if (c[i, j] == w) up++;
                 else break;
             }
 
             for (int i = a, j = b; j < 5; j++)
             {
-                if (cells[i, j] == w) right++;
+                if (c[i, j] == w) right++;
                 else break;
             }
 
             for (int i = a, j = b; j >= 0; j--)
             {
-                if (cells[i, j] == w) left++;
+                if (c[i, j] == w) left++;
                 else break;
             }
 
             for (int i = a, j = b; i >= 0 && j >= 0; i--, j--)
             {
-                if (cells[i, j] == w) upLeft++;
+                if (c[i, j] == w) upLeft++;
                 else break;
             }
 
             for (int i = a, j = b; i >= 0 && j < 5; i--, j++)
             {
-                if (cells[i, j] == w) upRight++;
+                if (c[i, j] == w) upRight++;
                 else break;
             }
 
-            for (int i = start / 5, j = start % 5; i < 5 && j >= 0; i++, j--)
+            for (int i = a, j = b; i < 5 && j >= 0; i++, j--)
             {
-                if (cells[i, j] == w) downLeft++;
+                if (c[i, j] == w) downLeft++;
                 else break;
             }
 
-            for (int i = start / 5, j = start % 5; i < 5 && j < 5; i++, j++)
+            for (int i = a, j = b; i < 5 && j < 5; i++, j++)
             {
-                if (cells[i, j] == w) downRight++;
+                if (c[i, j] == w) downRight++;
                 else break;
             }
 
