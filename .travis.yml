@@ -4,7 +4,7 @@ mono:
  - latest
 install:
  - sudo apt-get install -y gtk-sharp2
- - nuget install NUnit.Runners -Version 3.10.1 -OutputDirectory testrunner
+ - nuget install NUnit -Version 2.6.1 -OutputDirectory testrunner
 script:
  - xbuild /p:Configuration=Release TicTacToe.sln
- - mono ./testrunner/NUnit.Runners.3.10.1/tools/nunit-console.exe ./TicTacToe.Tests/bin/Release/TicTacToe.Tests.dll
+ - mono testrunner/NUnit.Runners.2.6.1/tools/nunit-console.exe Tests/bin/Release/Tests.dll
